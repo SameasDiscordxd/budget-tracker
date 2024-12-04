@@ -4,11 +4,14 @@ require('dotenv').config();
 const sequelize = require('./config/database');
 const User = require('./models/user');
 const PaySchedule = require('./models/paySchedule');
-const {MainCategory, SubCategory, Bill} = require('./models/bills');
+const {MainCategory, SubCategory, Bill} = require('./models/bill');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+const routes = require('./routes');
+app.use('/api', routes);
 
 const PORT = process.env.PORT || 5000;
 
