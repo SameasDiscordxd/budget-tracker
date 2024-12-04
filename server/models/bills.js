@@ -63,6 +63,38 @@ const Bill = sequelize.define('Bill', {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
+  // Add description/notes field
+  description: {
+    type: DataTypes.TEXT,
+    allowNull: true  // Optional field
+  },
+
+  // Auto-payment status
+  isAutoPay: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+
+  // Reminder settings (days before due date)
+  reminderDays: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    validate: {
+      min: 0,
+      max: 30
+    }
+  },
+
+  // Priority level (1 = highest, 3 = lowest)
+  priority: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 2,
+    validate: {
+      min: 1,
+      max: 3
+    }
+  },
   // Define the 'createdAt' field as a DATE with a default value of the current timestamp
   createdAt: {
     type: DataTypes.DATE,
