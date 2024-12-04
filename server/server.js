@@ -4,6 +4,7 @@ require('dotenv').config();
 const sequelize = require('./config/database');
 const User = require('./models/user');
 const PaySchedule = require('./models/paySchedule');
+const {MainCategory, SubCategory, Bill} = require('./models/bills');
 
 const app = express();
 app.use(cors());
@@ -11,37 +12,59 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
 
-async function testPaySchedule() {
+async function testBillModel() {
     try {
-        // Sync both models
-        await sequelize.sync({ force: true });
-        console.log('Models synced successfully');
-
-        // First create a test user
-        const testUser = await User.create({
-            email: 'test@example.com',
-            password: 'testpassword123',
-            name: 'Test User'
-        });
-        console.log('Test user created:', testUser.toJSON());
-
-        // Create a pay schedule for this user
-        const testSchedule = await PaySchedule.create({
-            userId: testUser.id,
-            incomeName: 'Main Job',
-            amount: 2000.00,
-            frequency: 'biweekly',
-            payDay: 5, // Friday (0 = Sunday, 5 = Friday)
-            description: 'Salary from primary employment'
-        });
-        console.log('Test pay schedule created:', testSchedule.toJSON());
-
+      // Sync the models with the database (creates tables if they don't exist)
+      await sequelize.sync({ force: true });
+  
+      // Create a user
+      const user = await User.create({
+        email: 'test@example.com',
+        password: 'password123',
+        name: 'John Doe',
+      });
+  
+      // Create main categories
+      const fixedCategory = await MainCategory.create({ name: 'fixed' });
+      const variableCategory = await MainCategory.create({ name: 'variable' });
+  
+      // Create sub categories
+      const rentSubCategory = await SubCategory.create({ name: 'Rent', MainCategoryId: fixedCategory.id });
+      const groceriesSubCategory = await SubCategory.create({ name: 'Groceries', MainCategoryId: variableCategory.id });
+  
+      // Create bills
+      const rentBill = await Bill.create({
+        userId: user.id,
+        name: 'Apartment Rent',
+        amount: 1000.00,
+        dueDate: '2023-06-01',
+        frequency: 'monthly',
+        MainCategoryId: fixedCategory.id,
+        SubCategoryId: rentSubCategory.id,
+      });
+  
+      const groceriesBill = await Bill.create({
+        userId: user.id,
+        name: 'Monthly Groceries',
+        amount: 250.50,
+        dueDate: '2023-06-15',
+        frequency: 'monthly',
+        MainCategoryId: variableCategory.id,
+        SubCategoryId: groceriesSubCategory.id,
+      });
+  
+      // Retrieve bills with associated user, main category, and sub category
+      const bills = await Bill.findAll({
+        include: [User, MainCategory, SubCategory],
+      });
+  
+      console.log('Bills:', JSON.stringify(bills, null, 2));
     } catch (error) {
-        console.error('Error testing models:', error);
+      console.error('Error testing Bill model:', error);
     }
-}
-
-testPaySchedule();
+  }
+  
+  testBillModel();
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
