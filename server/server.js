@@ -15,55 +15,90 @@ app.use('/api', routes);
 
 const PORT = process.env.PORT || 5000;
 
-async function testBillModels() {
-  try {
-      // Sync all models
-      await sequelize.sync({ force: true });
-      console.log('Models synced successfully');
+let testUserId; // Store the user ID
 
-      // Create test user
-      const testUser = await User.create({
-          email: 'test@example.com',
-          password: 'testpassword123',
-          name: 'Test User'
-      });
+async function initializeData() {
+   try {
+       // Sync without force: true
+       await sequelize.sync();
+       console.log('Models synced successfully');
 
-      // Create main categories
-      const fixedCategory = await MainCategory.create({
-          name: 'fixed'
-      });
+       // Check if we already have a test user
+       let testUser = await User.findOne({
+           where: { email: 'test@example.com' }
+       });
 
-      // Create sub-category
-      const rentCategory = await SubCategory.create({
-          name: 'Rent',
-          MainCategoryId: fixedCategory.id
-      });
+       // If no test user exists, create one
+       if (!testUser) {
+           testUser = await User.create({
+               email: 'test@example.com',
+               password: 'testpassword123',
+               name: 'Test User'
+           });
+           console.log('Test user created');
 
-      // Create test bill
-      const testBill = await Bill.create({
-          userId: testUser.id,
-          name: 'Monthly Rent',
-          amount: 1200.00,
-          dueDate: '2024-01-01',
-          frequency: 'monthly',
-          MainCategoryId: fixedCategory.id,
-          SubCategoryId: rentCategory.id,
-          description: 'Monthly apartment rent',
-          isAutoPay: true,
-          reminderDays: 5,
-          priority: 1
-      });
+           // Create main categories
+           const fixedCategory = await MainCategory.create({
+               name: 'fixed'
+           });
 
-      console.log('Test data created successfully');
-      console.log('Bill details:', testBill.toJSON());
+           // Create sub-category
+           const rentCategory = await SubCategory.create({
+               name: 'Rent',
+               MainCategoryId: fixedCategory.id
+           });
 
-  } catch (error) {
-      console.error('Error testing models:', error);
-  }
+           // Create test bill
+           const testBill = await Bill.create({
+               userId: testUser.id,
+               name: 'Monthly Rent',
+               amount: 1200.00,
+               dueDate: '2024-01-01',
+               frequency: 'monthly',
+               MainCategoryId: fixedCategory.id,
+               SubCategoryId: rentCategory.id,
+               description: 'Monthly apartment rent',
+               isAutoPay: true,
+               reminderDays: 5,
+               priority: 1
+           });
+       }
+       testUserId = testUser.id;
+       console.log('Initialization complete');
+   } catch (error) {
+       console.error('Error initializing data:', error);
+   }
 }
 
-testBillModels();
+// Route to get test IDs
+app.get('/api/test-ids', async (req, res) => {
+   try {
+       // First, find users
+       const users = await User.findAll();
+       console.log("Users found:", users); // Debug log
+
+       // Then categories
+       const mainCategories = await MainCategory.findAll({
+           include: [{
+               model: SubCategory
+           }]
+       });
+       console.log("Categories found:", mainCategories); // Debug log
+
+       // Send everything in response
+       res.json({
+           debug: "Full data dump",
+           users: users,
+           mainCategories: mainCategories
+       });
+   } catch (error) {
+       console.error("Error in test-ids route:", error);
+       res.status(500).json({ error: error.message });
+   }
+});
+
+initializeData();
 
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+   console.log(`Server is running on port ${PORT}`);
 });
