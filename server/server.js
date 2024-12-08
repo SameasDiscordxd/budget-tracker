@@ -1,91 +1,101 @@
+// Core dependencies
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+
+// Database and models
 const sequelize = require('./config/database');
 const User = require('./models/user');
 const PaySchedule = require('./models/paySchedule');
 const {MainCategory, SubCategory, Bill} = require('./models/bill');
 
+// Express setup
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Routes
 const routes = require('./routes');
 app.use('/api', routes);
 
 const PORT = process.env.PORT || 5000;
 
-let testUserId; // Store the user ID
-
+// Database initialization and test data setup
 async function initializeData() {
    try {
-       // Sync without force: true
        await sequelize.sync();
        console.log('Models synced successfully');
 
-       // Check if we already have a test user
+       // Create test user if none exists
        let testUser = await User.findOne({
            where: { email: 'test@example.com' }
        });
 
-       // If no test user exists, create one
        if (!testUser) {
            testUser = await User.create({
                email: 'test@example.com',
                password: 'testpassword123',
                name: 'Test User'
            });
-           console.log('Test user created');
 
-           // Create main categories
-           const fixedCategory = await MainCategory.create({
-               name: 'fixed'
-           });
+           // Create main budget categories
+           const [fixedCategory, variableCategory, nonEssentialCategory] = await Promise.all([
+               MainCategory.create({ name: 'fixed' }),
+               MainCategory.create({ name: 'variable' }),
+               MainCategory.create({ name: 'non_essential' })
+           ]);
 
-           // Create sub-category
-           const rentCategory = await SubCategory.create({
-               name: 'Rent',
-               MainCategoryId: fixedCategory.id
-           });
+           // Create subcategories for each main category
+           await Promise.all([
+               // Fixed expenses subcategories
+               SubCategory.create({ name: 'Rent/Mortgage', MainCategoryId: fixedCategory.id }),
+               SubCategory.create({ name: 'Car Payment', MainCategoryId: fixedCategory.id }),
+               SubCategory.create({ name: 'Insurance', MainCategoryId: fixedCategory.id }),
+               SubCategory.create({ name: 'Utilities', MainCategoryId: fixedCategory.id }),
 
-           // Create test bill
-           const testBill = await Bill.create({
+               // Variable expenses subcategories
+               SubCategory.create({ name: 'Groceries', MainCategoryId: variableCategory.id }),
+               SubCategory.create({ name: 'Gas', MainCategoryId: variableCategory.id }),
+               SubCategory.create({ name: 'Phone Bill', MainCategoryId: variableCategory.id }),
+               SubCategory.create({ name: 'Internet', MainCategoryId: variableCategory.id }),
+
+               // Non-essential expenses subcategories
+               SubCategory.create({ name: 'Entertainment', MainCategoryId: nonEssentialCategory.id }),
+               SubCategory.create({ name: 'Dining Out', MainCategoryId: nonEssentialCategory.id }),
+               SubCategory.create({ name: 'Shopping', MainCategoryId: nonEssentialCategory.id }),
+               SubCategory.create({ name: 'Subscriptions', MainCategoryId: nonEssentialCategory.id })
+           ]);
+
+           // Create sample bill
+           await Bill.create({
                userId: testUser.id,
                name: 'Monthly Rent',
                amount: 1200.00,
                dueDate: '2024-01-01',
                frequency: 'monthly',
                MainCategoryId: fixedCategory.id,
-               SubCategoryId: rentCategory.id,
+               SubCategoryId: 1,
                description: 'Monthly apartment rent',
                isAutoPay: true,
                reminderDays: 5,
                priority: 1
            });
        }
-       testUserId = testUser.id;
        console.log('Initialization complete');
    } catch (error) {
        console.error('Error initializing data:', error);
    }
 }
 
-// Route to get test IDs
+// Test endpoint to view data
 app.get('/api/test-ids', async (req, res) => {
    try {
-       // First, find users
        const users = await User.findAll();
-       console.log("Users found:", users); // Debug log
-
-       // Then categories
        const mainCategories = await MainCategory.findAll({
            include: [{
                model: SubCategory
            }]
        });
-       console.log("Categories found:", mainCategories); // Debug log
-
-       // Send everything in response
        res.json({
            debug: "Full data dump",
            users: users,
@@ -97,6 +107,7 @@ app.get('/api/test-ids', async (req, res) => {
    }
 });
 
+// Initialize data and start server
 initializeData();
 
 app.listen(PORT, () => {
