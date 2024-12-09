@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { Bill, MainCategory, SubCategory } = require('../models/bill');
+const auth = require('../middleware/auth');
 
 // Get all bills
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
     try {
         const bills = await Bill.findAll({
             include: [
@@ -19,7 +20,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get bill by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', auth, async (req, res) => {
     try {
         const bill = await Bill.findByPk(req.params.id, {
             include: [MainCategory, SubCategory]
@@ -34,7 +35,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create new bill
-router.post('/', async (req, res) => {
+router.post('/', auth, async (req, res) => {
     try {
         const newBill = await Bill.create(req.body);
         res.status(201).json(newBill);
@@ -44,7 +45,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update bill
-router.put('/:id', async (req, res) => {
+router.put('/:id', auth, async (req, res) => {
     try {
         const bill = await Bill.findByPk(req.params.id);
         if (!bill) {
@@ -58,7 +59,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete bill
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
     try {
         const bill = await Bill.findByPk(req.params.id);
         if (!bill) {
