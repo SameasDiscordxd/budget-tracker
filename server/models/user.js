@@ -38,6 +38,19 @@ const User = sequelize.define('User', {
     resetTokenExpiry: {
         type: DataTypes.DATE,
         allowNull: true
+    },
+    isVerified: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        allowNull: false
+    },
+    verificationToken: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    verificationExpiry: {
+        type: DataTypes.DATE,
+        allowNull: true
     }
 });
 
