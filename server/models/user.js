@@ -30,6 +30,14 @@ const User = sequelize.define('User', {
     updatedAt: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW
+    },
+    resetToken: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    resetTokenExpiry: {
+        type: DataTypes.DATE,
+        allowNull: true
     }
 });
 

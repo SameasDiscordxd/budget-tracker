@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "postgres",
+    "password": "Ravin1991!",
+    "database": "budget_tracker",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  },
+  "test": {
+    "username": "postgres",
+    "password": "Ravin1991!",
+    "database": "budget_tracker_test",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  },
+  "production": {
+    "username": "postgres",
+    "password": "Ravin1991!",
+    "database": "budget_tracker_production",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  }
+}
